@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Restaurant POS</title>
+
+<style>
+
+body{
+font-family:Courier New, monospace;
+background:#f5f5f5;
+margin:0;
+}
+
+.container{
+display:grid;
+grid-template-columns:300px 1fr 320px;
+height:100vh;
+}
+
+.panel{
+background:white;
+padding:15px;
+border-right:1px solid #ddd;
+overflow:auto;
+}
+
+h3{
+margin-top:0;
+}
+
+input{
+width:100%;
+padding:8px;
+margin-bottom:10px;
+}
+
+button{
+padding:8px 12px;
+cursor:pointer;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+td{
+padding:6px;
+border-bottom:1px solid #eee;
+}
+
+.bill{
+width:280px;
+font-size:13px;
+}
+
+.item-row{
+display:grid;
+grid-template-columns:1fr 35px 60px 70px;
+}
+
+.right{
+text-align:right;
+}
+
+.center{
+text-align:center;
+}
+
+@media print{
+
+body *{
+visibility:hidden;
+}
+
+#printable, #printable *{
+visibility:visible;
+}
+
+#printable{
+position:absolute;
+left:0;
+top:0;
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- MENU PANEL -->
+
+<div class="panel">
+
+<h3>Menu</h3>
+
+<input id="search" placeholder="Search item">
+
+<div id="menu"></div>
+
+</div>
+
+
+<!-- ORDER PANEL -->
+
+<div class="panel">
+
+<h3>Order</h3>
+
+<table id="orderTable"></table>
+
+<h3>Total: ₹<span id="total">0</span></h3>
+
+<button onclick="printBill()">Print</button>
+<button onclick="newBill()">New Bill</button>
+
+</div>
+
+
+<!-- BILL PREVIEW -->
+
+<div class="panel">
+
+<h3>Bill Preview</h3>
+
+<div id="printable" class="bill"></div>
+
+</div>
+
+</div>
+
+<script>
+
+let menuItems=[
+{name:"Aloo Parantha",price:60,code:"101"},
+{name:"Curd",price:45,code:"102"},
+{name:"Water Bottle",price:20,code:"103"},
+{name:"Paneer Tikka",price:220,code:"104"},
+{name:"Veg Thali",price:180,code:"105"}
+];
+
+let order=[];
+
+function renderMenu(){
+
+let html="";
+
+menuItems.forEach(i=>{
+
+html+=`<div onclick="addItem('${i.name}',${i.price})">
+${i.name} - ₹${i.price}
+</div>`;
+
+});
+
+document.getElementById("menu").innerHTML=html;
+
+}
+
+function addItem(name,price){
+
+let found=order.find(i=>i.name==name);
+
+if(found){
+
+found.qty++;
+
+}else{
+
+order.push({name,price,qty:1});
+
+}
+
+renderOrder();
+
+}
+
+function renderOrder(){
+
+let table=document.getElementById("orderTable");
+
+table.innerHTML="";
+
+let total=0;
+
+order.forEach((i,index)=>{
+
+let amt=i.qty*i.price;
+
+total+=amt;
+
+table.innerHTML+=`
+
+<tr>
+<td>${i.name}</td>
+<td>${i.qty}</td>
+<td>${i.price}</td>
+<td>${amt}</td>
+<td><button onclick="removeItem(${index})">X</button></td>
+</tr>
+
+`;
+
+});
+
+document.getElementById("total").innerText=total;
+
+generateBill();
+
+}
+
+function removeItem(index){
+
+order.splice(index,1);
+
+renderOrder();
+
+}
+
+function generateBill(){
+
+let billNo=localStorage.getItem("billNo")||1;
+
+let total=0;
+let totalItems=0;
+
+let html=`
+
+<div class="center">
+<b>Moga Punjabi Tadka</b><br>
+#NH 24, opp. Gajraula Haveli Resort<br>
+PH: 9761615454
+</div>
+
+<hr>
+
+Bill No: ${billNo}
+
+<hr>
+
+`;
+
+order.forEach(i=>{
+
+let amt=i.qty*i.price;
+
+total+=amt;
+totalItems+=i.qty;
+
+html+=`
+
+<div class="item-row">
+<div>${i.name}</div>
+<div class="center">${i.qty}</div>
+<div class="right">${i.price}</div>
+<div class="right">${amt}</div>
+</div>
+
+`;
+
+});
+
+html+=`
+
+<hr>
+
+Total Items: ${totalItems}
+
+<div class="right">
+TOTAL ₹${total}
+</div>
+
+<hr>
+
+<div class="center">
+THANK YOU VISIT AGAIN<br>
+HAVE A NICE DAY
+</div>
+
+`;
+
+document.getElementById("printable").innerHTML=html;
+
+}
+
+function printBill(){
+
+window.print();
+
+let billNo=localStorage.getItem("billNo")||1;
+
+billNo++;
+
+localStorage.setItem("billNo",billNo);
+
+}
+
+function newBill(){
+
+order=[];
+
+renderOrder();
+
+}
+
+renderMenu();
+
+</script>
+
+</body>
+</html>
